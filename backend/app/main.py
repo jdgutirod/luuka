@@ -2,12 +2,15 @@ import uvicorn
 
 from fastapi import FastAPI
 from app.core.config import PORT
-# from app.routers import users, items
+from app.core.exception_handlers import register_exception_handlers
+from app.routers import accounts, transactions
 
 app = FastAPI(title="FastAPI App")
 
-# app.include_router(users.router)
-# app.include_router(items.router)
+register_exception_handlers(app)
+
+app.include_router(accounts.router)
+app.include_router(transactions.router)
 
 @app.get("/health")
 async def root() -> dict:

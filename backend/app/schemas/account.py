@@ -8,7 +8,7 @@ class AccountBase(BaseModel):
     email: EmailStr
 
 class AccountCreate(AccountBase):
-    pass
+    password: str = Field(..., min_length=8, max_length=128, description="La contraseña debe tener al menos 8 caracteres")
 
 class AccountResponse(AccountBase):
     model_config = ConfigDict(from_attributes=True)
@@ -16,3 +16,7 @@ class AccountResponse(AccountBase):
     id: UUID
     balance: Decimal
     created_at: datetime
+
+class BalanceResponse(BaseModel):
+    account_id: UUID
+    balance: Decimal
