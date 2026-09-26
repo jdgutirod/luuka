@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, Numeric, String, UniqueConstraint, text, Enum as SQLEnum
+from sqlalchemy import BigInteger, CheckConstraint, Column, DateTime, ForeignKey, Index, String, UniqueConstraint, text, Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.db.database import Base
@@ -14,7 +14,7 @@ class Transaction(Base):
             "(type = 'RELOAD' AND from_account_id IS NULL AND to_account_id IS NOT NULL)"
             " OR (type = 'DIRECT_TRANSFER' AND from_account_id IS NOT NULL AND to_account_id IS NOT NULL"
             " AND from_account_id <> to_account_id)"
-            " OR (type IN ('COURT_PAYMENT', 'REFUND') AND (from_account_id IS NOT NULL OR to_account_id IS NOT NULL))",
+            " OR (type = 'COURT_PAYMENT' AND (from_account_id IS NOT NULL OR to_account_id IS NOT NULL))",
             name="ck_transactions_accounts_match_type",
         ),
         # Idempotency keys are unique per requesting account: the sender for transfers, the receiver for reloads
@@ -30,7 +30,7 @@ class Transaction(Base):
 
     # Attributes
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    amount = Column(Numeric(precision=12, scale=2), nullable=False)
+    amount = Column(BigInteger, nullable=False)
     idempotency_key = Column(String(255), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 

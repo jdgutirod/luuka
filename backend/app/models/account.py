@@ -1,7 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from decimal import Decimal
-from sqlalchemy import CheckConstraint, Column, DateTime, Numeric, String
+from sqlalchemy import BigInteger, CheckConstraint, Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.db.database import Base
@@ -16,8 +15,10 @@ class Account(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     owner_name = Column(String(100), nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
+    # Public identifier to find the account, like a Colombian car plate: 3 letters + 3 digits (e.g. KQX482)
+    plate = Column(String(6), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    balance = Column(Numeric(precision=12, scale=2), default=Decimal("0.00"), nullable=False)
+    balance = Column(BigInteger, default=0, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships

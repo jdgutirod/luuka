@@ -1,0 +1,52 @@
+# Starts the whole app: PostgreSQL, the API and the web frontend.
+# Usage: cp .env.example .env (and fill it in), then: docker compose up --build
+name: lukas
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lukas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en el archivo .env}
+      POSTGRES_DB: ${POSTGRES_DB:-lukas}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    environment:
+      # "db" is the name of the database service inside the Docker network
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-lukas}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-lukas}
+      SECRET_KEY: ${SECRET_KEY:?Define SECRET_KEY en el archivo .env}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      MIN_TRANSACTION_AMOUNT: ${MIN_TRANSACTION_AMOUNT:-1000}
+      MAX_TRANSACTION_AMOUNT: ${MAX_TRANSACTION_AMOUNT:-10000000}
+      CORS_ORIGINS: http://localhost:${FRONTEND_PORT:-5173}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Address the user's browser uses to reach the API
+        VITE_API_URL: http://localhost:${BACKEND_PORT:-8000}
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:

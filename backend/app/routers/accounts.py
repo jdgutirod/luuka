@@ -5,10 +5,16 @@ from sqlalchemy.orm import Session
 from app.core.dependencies import get_current_account
 from app.db.database import get_db
 from app.models.account import Account
-from app.schemas.account import AccountCreate, AccountResponse, BalanceResponse
+from app.schemas.account import AccountCreate, AccountPublic, AccountResponse, BalanceResponse
 from app.schemas.auth import Token
 from app.schemas.transaction import TransactionResponse
-from app.services.accounts import authenticate_account, create_account, get_balance, get_transaction_history
+from app.services.accounts import (
+    authenticate_account,
+    create_account,
+    get_account_by_plate,
+    get_balance,
+    get_transaction_history,
+)
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
@@ -28,6 +34,21 @@ def login(
     """Authenticate with email (sent as `username`) and password, and get an access token."""
     access_token = authenticate_account(db, form_data.username, form_data.password)
     return Token(access_token=access_token)
+
+@router.get("/me", response_model=AccountResponse)
+def read_my_account(
+    current_account: Annotated[Account, Depends(get_current_account)],
+):
+    """Get the current account: name, email, plate and balance."""
+    return current_account
+
+@router.get("/lookup", response_model=AccountPublic, dependencies=[Depends(get_current_account)])
+def lookup_account(
+    plate: Annotated[str, Query(min_length=6, max_length=8, description="Placa de la cuenta, por ejemplo KQX482 o kqx-482")],
+    db: Annotated[Session, Depends(get_db)],
+):
+    """Find an account by its plate, to confirm who receives a transfer or joins a group charge."""
+    return get_account_by_plate(db, plate)
 
 @router.get("/me/balance", response_model=BalanceResponse)
 def read_balance(

@@ -1,32 +1,35 @@
 import uuid
-from decimal import Decimal
 import pytest
 from pydantic import ValidationError
 from app.schemas.group_charge import GroupChargeCreate
 
 
-def test_group_charge_accepts_member_amounts_that_add_up_to_total():
-    group_charge = GroupChargeCreate(
-        name="Cancha sábado",
-        total_amount="100.00",
-        member_charges=[
-            {"account_id": uuid.uuid4(), "assigned_amount": "60"},
-            {"account_id": uuid.uuid4(), "assigned_amount": "40"},
-        ],
-    )
+def test_group_charge_accepts_valid_members():
+    members = [uuid.uuid4(), uuid.uuid4()]
 
-    assert group_charge.total_amount == Decimal("100")
+    group_charge = GroupChargeCreate(name="Cancha sábado", total_amount=100_000, member_account_ids=members)
 
-
-def test_group_charge_rejects_member_amounts_that_do_not_add_up():
-    with pytest.raises(ValidationError, match="La suma de los montos asignados debe ser igual al monto total"):
-        GroupChargeCreate(
-            name="Cancha sábado",
-            total_amount="100",
-            member_charges=[{"account_id": uuid.uuid4(), "assigned_amount": "50"}],
-        )
+    assert group_charge.total_amount == 100_000
+    assert group_charge.member_account_ids == members
 
 
 def test_group_charge_requires_at_least_one_member():
     with pytest.raises(ValidationError):
-        GroupChargeCreate(name="Cancha sábado", total_amount="100", member_charges=[])
+        GroupChargeCreate(name="Cancha sábado", total_amount=100_000, member_account_ids=[])
+
+
+def test_group_charge_rejects_repeated_members():
+    member = uuid.uuid4()
+
+    with pytest.raises(ValidationError, match="Los miembros no pueden repetirse"):
+        GroupChargeCreate(name="Cancha sábado", total_amount=100_000, member_account_ids=[member, member])
+
+
+def test_group_charge_rejects_total_smaller_than_one_peso_per_member():
+    with pytest.raises(ValidationError, match="al menos 1 peso por miembro"):
+        GroupChargeCreate(name="Cancha sábado", total_amount=1_000, member_account_ids=[uuid.uuid4() for _ in range(1_001)])
+
+
+def test_group_charge_total_must_be_a_whole_peso_number():
+    with pytest.raises(ValidationError):
+        GroupChargeCreate(name="Cancha sábado", total_amount="100.000", member_account_ids=[uuid.uuid4()])

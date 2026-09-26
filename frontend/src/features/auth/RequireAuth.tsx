@@ -1,0 +1,13 @@
+import { Navigate, Outlet, useLocation } from 'react-router'
+import { useAuth } from './useAuth'
+
+/** Protects the routes inside it: without a session, sends the user to the login and back afterwards. */
+export function RequireAuth() {
+  const { isAuthenticated } = useAuth()
+  const location = useLocation()
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  }
+  return <Outlet />
+}

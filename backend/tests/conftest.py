@@ -61,7 +61,7 @@ def client(session_factory):
 @pytest.fixture
 def make_account(client):
     """Registers an account, logs in and optionally reloads a starting balance. Returns (account_id, headers)."""
-    def _make_account(email: str, balance: str | None = None) -> tuple[str, dict[str, str]]:
+    def _make_account(email: str, balance: int | None = None) -> tuple[str, dict[str, str]]:
         response = client.post("/accounts", json={"owner_name": email.split("@")[0], "email": email, "password": PASSWORD})
         assert response.status_code == 201, response.text
         account_id = response.json()["id"]
@@ -80,9 +80,33 @@ def make_account(client):
 
 @pytest.fixture
 def balance_of(client):
-    """Returns the current balance of the account behind the given headers, as a string."""
-    def _balance_of(headers: dict[str, str]) -> str:
+    """Returns the current balance, in whole pesos, of the account behind the given headers."""
+    def _balance_of(headers: dict[str, str]) -> int:
         response = client.get("/accounts/me/balance", headers=headers)
         assert response.status_code == 200, response.text
         return response.json()["balance"]
     return _balance_of
+
+
+@pytest.fixture
+def create_group_charge(client):
+    """Creates a group charge as the account behind the headers. Returns the response."""
+    def _create_group_charge(headers: dict[str, str], total_amount: int, member_ids: list[str]):
+        body = {"name": "Cancha sábado", "total_amount": total_amount, "member_account_ids": member_ids}
+        return client.post("/group-charges", json=body, headers=headers)
+    return _create_group_charge
+
+
+def member_charge_of(group_charge: dict, account_id: str) -> dict:
+    """Finds the member charge of the given account inside a group charge response."""
+    return next(m for m in group_charge["member_charges"] if m["account"]["id"] == account_id)
+
+
+@pytest.fixture
+def plate_of(client):
+    """Returns the plate of the account behind the given headers."""
+    def _plate_of(headers: dict[str, str]) -> str:
+        response = client.get("/accounts/me", headers=headers)
+        assert response.status_code == 200, response.text
+        return response.json()["plate"]
+    return _plate_of
