@@ -27,6 +27,17 @@ def split_amount(total: int, parts: int) -> list[int]:
     return [base + 1 if index < leftover else base for index in range(parts)]
 
 
+def split_member_amounts(total: int, members: int, creator_plays: bool) -> list[int]:
+    """What each member is charged.
+
+    When the creator also played, the total is split among the members and the creator, and the creator's part
+    is not charged. The leftover pesos stay in the creator's part, so no member pays more than an equal part.
+    """
+    if creator_plays:
+        return [total // (members + 1)] * members
+    return split_amount(total, members)
+
+
 def create_group_charge(
     db: Session,
     data: GroupChargeCreate,
@@ -47,14 +58,14 @@ def create_group_charge(
         if account_id not in existing_account_ids:
             raise AccountNotFoundError(account_id)
 
-    # Insertion: one member charge per member, splitting the total equally
+    # Insertion: one member charge per member, splitting the total equally (the creator's part, if any, is not charged)
     new_group_charge = GroupCharge(
         name=data.name,
         total_amount=data.total_amount,
         creator_id=creator_id,
         idempotency_key=idempotency_key,
     )
-    amounts = split_amount(data.total_amount, len(data.member_account_ids))
+    amounts = split_member_amounts(data.total_amount, len(data.member_account_ids), data.creator_plays)
     new_group_charge.member_charges = [
         MemberCharge(account_id=account_id, assigned_amount=amount)
         for account_id, amount in zip(data.member_account_ids, amounts)
@@ -144,6 +155,7 @@ def _ensure_same_request(group_charge: GroupCharge, data: GroupChargeCreate, ide
         group_charge.name != data.name
         or group_charge.total_amount != data.total_amount
         or member_account_ids != set(data.member_account_ids)
+        or (group_charge.creator_share > 0) != data.creator_plays
     ):
         raise IdempotencyKeyConflictError(idempotency_key)
     return group_charge

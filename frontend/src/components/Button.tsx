@@ -1,19 +1,10 @@
 import type { ComponentProps } from 'react'
+import { buttonClasses, type ButtonVariant } from './button-styles'
 
 type ButtonProps = ComponentProps<'button'> & {
-  variant?: 'primary' | 'secondary'
+  variant?: ButtonVariant
 }
 
-const variants = {
-  primary: 'bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-emerald-300',
-  secondary: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:text-slate-400',
-}
-
-export function Button({ variant = 'primary', className = '', ...props }: ButtonProps) {
-  return (
-    <button
-      className={`rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${variants[variant]} ${className}`}
-      {...props}
-    />
-  )
+export function Button({ variant = 'primary', className = '', type = 'button', ...props }: ButtonProps) {
+  return <button type={type} className={buttonClasses(variant, className)} {...props} />
 }

@@ -3,7 +3,7 @@ import pytest
 from sqlalchemy import func, select
 from app.core.config import MAX_TRANSACTION_AMOUNT, MIN_TRANSACTION_AMOUNT
 from app.models.group_charge import GroupCharge
-from app.services.group_charges import split_amount
+from app.services.group_charges import split_amount, split_member_amounts
 from tests.conftest import member_charge_of
 
 
@@ -26,6 +26,26 @@ def test_split_amount_divides_equally_and_adds_up_to_total(total, parts, expecte
     assert sum(amounts) == total
 
 
+@pytest.mark.parametrize(
+    ("total", "members", "expected_members", "expected_creator"),
+    [
+        (100_000, 4, [20_000, 20_000, 20_000, 20_000], 20_000),
+        # The leftover pesos stay with the creator: no member pays more than an equal part
+        (100_000, 2, [33_333, 33_333], 33_334),
+        (2, 1, [1], 1),
+    ],
+)
+def test_split_member_amounts_when_creator_plays_leaves_the_creator_part_uncharged(total, members, expected_members, expected_creator):
+    amounts = split_member_amounts(total, members, creator_plays=True)
+
+    assert amounts == expected_members
+    assert total - sum(amounts) == expected_creator
+
+
+def test_split_member_amounts_when_creator_does_not_play_splits_among_members_only():
+    assert split_member_amounts(100_000, 3, creator_plays=False) == [33_334, 33_333, 33_333]
+
+
 # Create group charge
 
 def test_create_group_charge_generates_one_pending_member_charge_per_member(client, make_account, create_group_charge):
@@ -46,6 +66,38 @@ def test_create_group_charge_generates_one_pending_member_charge_per_member(clie
     assert member_charge_of(group_charge, ana_id)["assigned_amount"] == 33_334
     assert member_charge_of(group_charge, beto_id)["assigned_amount"] == 33_333
     assert sum(m["assigned_amount"] for m in group_charge["member_charges"]) == 100_000
+    assert group_charge["creator_share"] == 0
+
+
+def test_create_group_charge_when_creator_plays_charges_members_only_their_part(make_account, create_group_charge):
+    _, creator_headers = make_account("organizador@mail.com")
+    member_ids = [make_account(f"jugador{index}@mail.com")[0] for index in range(4)]
+
+    response = create_group_charge(creator_headers, 100_000, member_ids, creator_plays=True)
+
+    assert response.status_code == 201
+    group_charge = response.json()
+    assert group_charge["total_amount"] == 100_000
+    assert group_charge["creator_share"] == 20_000
+    assert [m["assigned_amount"] for m in group_charge["member_charges"]] == [20_000] * 4
+
+
+def test_group_charge_where_creator_plays_completes_when_all_members_paid(client, make_account, create_group_charge, balance_of):
+    _, creator_headers = make_account("organizador@mail.com")
+    ana_id, ana_headers = make_account("ana@mail.com", balance=50_000)
+    group_charge = create_group_charge(creator_headers, 60_000, [ana_id], creator_plays=True).json()
+
+    pay = client.post(
+        f"/group-charges/member-charges/{member_charge_of(group_charge, ana_id)['id']}/pay",
+        headers=ana_headers,
+    )
+    detail = client.get(f"/group-charges/{group_charge['id']}", headers=creator_headers).json()
+
+    assert pay.status_code == 200
+    assert balance_of(ana_headers) == 20_000
+    assert balance_of(creator_headers) == 30_000
+    assert detail["state"] == "COMPLETED"
+    assert detail["creator_share"] == 30_000
 
 
 def test_create_group_charge_does_not_move_money(client, make_account, create_group_charge, balance_of):
@@ -121,8 +173,9 @@ def test_create_group_charge_same_idempotency_key_with_other_data_returns_422(ma
 
     other_total = create_group_charge(headers_with_key, 120_000, [ana_id])
     other_members = create_group_charge(headers_with_key, 100_000, [ana_id, beto_id])
+    other_creator_plays = create_group_charge(headers_with_key, 100_000, [ana_id], creator_plays=True)
 
-    assert other_total.status_code == other_members.status_code == 422
+    assert other_total.status_code == other_members.status_code == other_creator_plays.status_code == 422
 
 
 # Read group charges

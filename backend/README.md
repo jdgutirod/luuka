@@ -1,4 +1,8 @@
-# Lukas - Backend
+<p align="center">
+  <a href="README.md"><img src="https://img.shields.io/badge/README-Principal-047857?style=flat-square" alt="README principal" /></a>
+</p>
+
+# Luuka - Backend
 
 API de una billetera digital. Permite:
 
@@ -31,7 +35,7 @@ Casi todos los endpoints necesitan saber **quién** hace la petición. Para eso 
 ```mermaid
 sequenceDiagram
     actor U as Usuario (app)
-    participant API as API Habi
+    participant API as API Luuka
     participant DB as Base de datos
 
     U->>API: POST /accounts (nombre, email, contraseña)
@@ -54,30 +58,28 @@ sequenceDiagram
 
 🔒 = necesita token.
 
-| Método | Ruta                                        | Qué hace                                                  |
-| ------ | ------------------------------------------- | --------------------------------------------------------- |
-| GET    | `/health`                                   | Comprueba que la API está encendida                       |
-| POST   | `/accounts`                                 | Crea una cuenta                                           |
-| POST   | `/accounts/login`                           | Inicia sesión y entrega un token                          |
-| GET    | `/accounts/me` 🔒                           | Muestra tus datos: nombre, email, placa y saldo           |
-| GET    | `/accounts/lookup?plate=KQX482` 🔒          | Busca una cuenta por su placa                             |
-| GET    | `/accounts/me/balance` 🔒                   | Muestra tu saldo                                          |
-| GET    | `/accounts/me/transactions` 🔒              | Muestra tu historial de movimientos                       |
-| POST   | `/transactions/reloads` 🔒                  | Recarga saldo en tu cuenta                                |
-| POST   | `/transactions/transfers` 🔒                | Transfiere dinero a otra cuenta                           |
-| POST   | `/group-charges` 🔒                         | Crea un cobro grupal y divide el total entre los miembros |
+| Método | Ruta                                        | Qué hace                                                   |
+| ------ | ------------------------------------------- | ---------------------------------------------------------- |
+| GET    | `/health`                                   | Comprueba que la API está encendida                        |
+| POST   | `/accounts`                                 | Crea una cuenta                                            |
+| POST   | `/accounts/login`                           | Inicia sesión y entrega un token                           |
+| GET    | `/accounts/me` 🔒                           | Muestra tus datos: nombre, email, placa y saldo            |
+| GET    | `/accounts/lookup?plate=KQX482` 🔒          | Busca una cuenta por su placa                              |
+| GET    | `/accounts/me/balance` 🔒                   | Muestra tu saldo                                           |
+| GET    | `/accounts/me/transactions` 🔒              | Muestra tu historial de movimientos                        |
+| POST   | `/transactions/reloads` 🔒                  | Recarga saldo en tu cuenta                                 |
+| POST   | `/transactions/transfers` 🔒                | Transfiere dinero a otra cuenta                            |
+| POST   | `/group-charges` 🔒                         | Crea un cobro grupal y divide el total entre los miembros  |
 | GET    | `/group-charges/created` 🔒                 | Muestra los cobros grupales que creaste (filtro `?state=`) |
-| GET    | `/group-charges/{id}` 🔒                    | Muestra un cobro grupal y el estado de cada miembro       |
-| GET    | `/group-charges/member-charges/me` 🔒       | Muestra tus cobros individuales (filtro `?state=PENDING`) |
-| POST   | `/group-charges/member-charges/{id}/pay` 🔒 | Paga tu parte de un cobro grupal                          |
-
-Cuando una respuesta menciona a otra persona (quién envió o recibió un movimiento, quién creó un cobro, quién es miembro), trae su **nombre y placa**, nunca su email ni su saldo.
+| GET    | `/group-charges/{id}` 🔒                    | Muestra un cobro grupal y el estado de cada miembro        |
+| GET    | `/group-charges/member-charges/me` 🔒       | Muestra tus cobros individuales (filtro `?state=PENDING`)  |
+| POST   | `/group-charges/member-charges/{id}/pay` 🔒 | Paga tu parte de un cobro grupal                           |
 
 ---
 
 ## La placa: cómo encontrar a otra persona
 
-Cada cuenta recibe al registrarse una **placa** única, con el formato de las placas de carro colombianas: 3 letras y 3 números, por ejemplo `KQX482`. No usa las letras `I` ni `O`, para que no se confundan con `1` y `0`.
+Cada cuenta recibe al registrarse una **placa** única, con el formato de las placas de carro colombianas: 3 letras y 3 números, por ejemplo `KQX482`.
 
 Para transferir o agregar a alguien a un cobro grupal:
 
@@ -97,7 +99,7 @@ Sirven para dividir el pago de una cancha. Quien pagó la cancha (el **creador**
 ```mermaid
 sequenceDiagram
     actor C as Creador (pagó la cancha)
-    participant API as API Lukas
+    participant API as API Luuka
     actor M as Cada miembro
 
     C->>API: POST /group-charges<br/>total $100.000, miembros: Ana, Beto, Carla
@@ -115,8 +117,11 @@ sequenceDiagram
 
 **Reglas:**
 
-- Si la división no es exacta, los pesos que sobran se reparten de a uno entre los primeros miembros de la lista. Por ejemplo, $100.000 entre 3 queda en $33.334, $33.333 y $33.333.
-- El creador no puede estar entre los miembros; el total se divide solo entre ellos.
+- El creador no va en la lista de miembros. Si **también jugó**, envía `"creator_plays": true`: el total se divide entre los miembros **y él**, y su parte no se le cobra a nadie (la respuesta la muestra en `creator_share`). Por ejemplo, $100.000 entre 5 personas: cada uno de los 4 miembros paga $20.000 y el creador pone sus $20.000.
+- Si no jugó (`creator_plays` es `false`, el valor por defecto), el total se divide solo entre los miembros y `creator_share` es 0.
+- Si la división no es exacta:
+  - Sin el creador, los pesos que sobran se reparten de a uno entre los primeros miembros de la lista. Por ejemplo, $100.000 entre 3 queda en $33.334, $33.333 y $33.333.
+  - Con el creador, los pesos que sobran quedan en su parte, así ningún miembro paga más que los demás. Por ejemplo, $100.000 entre 2 miembros y el creador: cada miembro paga $33.333 y el creador pone $33.334.
 - Crear el cobro **no mueve dinero**; el dinero se mueve cuando cada miembro paga. El pago aparece como `COURT_PAYMENT` en el historial.
 - Solo el creador y los miembros pueden ver un cobro grupal.
 - Pagar dos veces el mismo cobro individual **no cobra dos veces**: la segunda vez devuelve el cobro ya pagado.
@@ -139,7 +144,7 @@ La app genera un código único cuando el usuario toca "Transferir" (o "Recargar
 ```mermaid
 sequenceDiagram
     actor App
-    participant API as API Habi
+    participant API as API Luuka
 
     App->>API: Transferir $30.000 (Idempotency-Key: abc-123)
     API->>API: Descuenta $30.000 y guarda la operación
@@ -186,6 +191,20 @@ Por defecto se permite `http://localhost:5173`, la dirección donde corre un fro
 
 ---
 
+## Revisar que los saldos cuadren
+
+El saldo de cada cuenta se puede recalcular a partir de sus movimientos: lo que entró menos lo que salió. Este comando hace esa revisión para todas las cuentas y, además, revisa que la suma de todos los saldos sea igual a todo lo recargado:
+
+```bash
+python -m app.db.check_balances
+```
+
+Con Docker: `docker compose exec backend python -m app.db.check_balances`.
+
+Si todo cuadra, termina con código `0`. Si no, muestra las cuentas con descuadre y termina con código `1`. Solo lee: nunca corrige un saldo.
+
+---
+
 ## Tests
 
 ### Instalar las herramientas de pruebas
@@ -202,6 +221,12 @@ Desde la carpeta `backend/`:
 pytest
 ```
 
+Por defecto los tests usan SQLite en memoria. Los dos tests de operaciones al mismo tiempo necesitan bloqueos de filas, que solo existen en PostgreSQL, así que con SQLite se omiten. Para correrlos, define `TEST_DATABASE_URL` con una base de PostgreSQL. **Esa base se borra.**
+
+```bash
+TEST_DATABASE_URL=postgresql+psycopg://usuario:clave@localhost:5432/luuka_test pytest
+```
+
 ---
 
 ## Estructura del proyecto
@@ -211,10 +236,10 @@ backend/
 ├── app/
 │   ├── main.py            # Punto de entrada de la API
 │   ├── core/              # Configuración, seguridad, errores y autenticación
-│   ├── db/                # Conexión a la base de datos y creación de tablas
+│   ├── db/                # Conexión a la base de datos, creación de tablas y revisión de saldos
 │   ├── models/            # Tablas de la base de datos
 │   ├── schemas/           # Formato de los datos que entran y salen de la API
-│   ├── services/          # Lógica de negocio (cuentas, transacciones, cobros grupales)
+│   ├── services/          # Lógica de negocio (cuentas, transacciones, cobros grupales, revisión de saldos)
 │   └── routers/           # Endpoints
 ├── tests/                 # Pruebas automáticas
 ├── .env.example           # Plantilla de configuración

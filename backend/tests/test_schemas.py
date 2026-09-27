@@ -30,6 +30,17 @@ def test_group_charge_rejects_total_smaller_than_one_peso_per_member():
         GroupChargeCreate(name="Cancha sábado", total_amount=1_000, member_account_ids=[uuid.uuid4() for _ in range(1_001)])
 
 
+def test_group_charge_counts_the_creator_when_they_play():
+    # 1.000 members + the creator are 1.001 people: $1.000 does not reach 1 peso each
+    with pytest.raises(ValidationError, match="al menos 1 peso por miembro"):
+        GroupChargeCreate(
+            name="Cancha sábado",
+            total_amount=1_000,
+            member_account_ids=[uuid.uuid4() for _ in range(1_000)],
+            creator_plays=True,
+        )
+
+
 def test_group_charge_total_must_be_a_whole_peso_number():
     with pytest.raises(ValidationError):
         GroupChargeCreate(name="Cancha sábado", total_amount="100.000", member_account_ids=[uuid.uuid4()])

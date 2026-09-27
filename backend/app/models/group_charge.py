@@ -29,3 +29,8 @@ class GroupCharge(Base):
     # Relationships
     creator = relationship("Account", back_populates="created_group_charges")
     member_charges = relationship("MemberCharge", back_populates="group_charge")
+
+    @property
+    def creator_share(self) -> int:
+        """What the creator puts in because they also played: the part of the total no member is charged for."""
+        return self.total_amount - sum(member_charge.assigned_amount for member_charge in self.member_charges)

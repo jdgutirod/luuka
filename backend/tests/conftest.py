@@ -91,8 +91,8 @@ def balance_of(client):
 @pytest.fixture
 def create_group_charge(client):
     """Creates a group charge as the account behind the headers. Returns the response."""
-    def _create_group_charge(headers: dict[str, str], total_amount: int, member_ids: list[str]):
-        body = {"name": "Cancha sábado", "total_amount": total_amount, "member_account_ids": member_ids}
+    def _create_group_charge(headers: dict[str, str], total_amount: int, member_ids: list[str], creator_plays: bool = False):
+        body = {"name": "Cancha sábado", "total_amount": total_amount, "member_account_ids": member_ids, "creator_plays": creator_plays}
         return client.post("/group-charges", json=body, headers=headers)
     return _create_group_charge
 

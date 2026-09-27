@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { getErrorMessage } from '../../api/errors'
 import { AuthLayout } from '../../components/AuthLayout'
 import { Button } from '../../components/Button'
+import { PasswordField } from '../../components/PasswordField'
 import { TextField } from '../../components/TextField'
 import { useAuth } from './useAuth'
 
@@ -42,12 +43,11 @@ export function LoginPage() {
   })
 
   return (
-    <AuthLayout title="Inicia sesión" subtitle="Entra a tu billetera Lukas">
+    <AuthLayout title="Inicia sesión" subtitle="Entra a tu billetera Luuka">
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
         <TextField label="Email" type="email" autoComplete="email" error={errors.email?.message} {...register('email')} />
-        <TextField
+        <PasswordField
           label="Contraseña"
-          type="password"
           autoComplete="current-password"
           error={errors.password?.message}
           {...register('password')}

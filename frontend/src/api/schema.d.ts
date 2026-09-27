@@ -398,6 +398,12 @@ export interface components {
              * @description Cuentas entre las que se divide el total en partes iguales
              */
             member_account_ids: string[];
+            /**
+             * Creator Plays
+             * @description Si el creador también jugó: el total se divide entre los miembros y él, y su parte no se le cobra a nadie
+             * @default false
+             */
+            creator_plays: boolean;
         };
         /** GroupChargeResponse */
         GroupChargeResponse: {
@@ -410,6 +416,11 @@ export interface components {
             id: string;
             /** Total Amount */
             total_amount: number;
+            /**
+             * Creator Share
+             * @description Parte del total que pone el creador porque también jugó (0 si no jugó). No se cobra
+             */
+            creator_share: number;
             state: components["schemas"]["ChargeState"];
             creator: components["schemas"]["AccountPublic"];
             /**

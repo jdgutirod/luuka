@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { getErrorMessage } from '../../api/errors'
 import { AuthLayout } from '../../components/AuthLayout'
 import { Button } from '../../components/Button'
+import { PasswordField } from '../../components/PasswordField'
 import { TextField } from '../../components/TextField'
 import { registerAccount } from './api'
 import { useAuth } from './useAuth'
@@ -48,9 +49,8 @@ export function RegisterPage() {
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
         <TextField label="Nombre" autoComplete="name" error={errors.owner_name?.message} {...register('owner_name')} />
         <TextField label="Email" type="email" autoComplete="email" error={errors.email?.message} {...register('email')} />
-        <TextField
+        <PasswordField
           label="Contraseña"
-          type="password"
           autoComplete="new-password"
           error={errors.password?.message}
           {...register('password')}

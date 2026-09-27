@@ -1,75 +1,42 @@
-# React + TypeScript + Vite
+<p align="center">
+  <a href="README.md"><img src="https://img.shields.io/badge/README-Principal-047857?style=flat-square" alt="README principal" /></a>
+</p>
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+# Luuka - Frontend
 
-Currently, two official plugins are available:
+Aplicación web de Luuka, pensada para usarse desde el celular. Sirve para manejar la billetera (recargar, transferir y ver movimientos) y para **dividir el pago de una cancha** entre quienes jugaron.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Todo lo que muestra y hace lo pide a la API del backend (ver [backend/README.md](../backend/README.md)).
 
-## React Compiler
+A cada persona se le encuentra por su **placa**, por ejemplo `KQX-482`, que recibe al registrarse. La app nunca muestra el email ni el saldo de otra persona, solo su nombre y su placa.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Vistas
 
-## Expanding the ESLint configuration
+### Sin sesión
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| Vista          | Ruta        | Para qué sirve                                                  |
+| -------------- | ----------- | --------------------------------------------------------------- |
+| Iniciar sesión | `/login`    | Entrar con email y contraseña.                                  |
+| Registro       | `/register` | Crear una cuenta. Al terminar ya quedas con la sesión iniciada. |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Pestañas principales
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Tienen una barra de navegación flotante abajo. El botón **+** del centro abre los atajos a Recargar, Transferir y Dividir una cancha.
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+| Vista       | Ruta            | Para qué sirve                                                                                                                                               |
+| ----------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Inicio      | `/`             | Tu saldo y tu placa, accesos rápidos, un aviso si tienes cobros por pagar y tus últimos movimientos.                                                         |
+| Movimientos | `/transactions` | Historial de recargas, transferencias y pagos de cancha, agrupado por día.                                                                                   |
+| Cobros      | `/charges`      | Dos pestañas: **Por pagar**, con lo que te cobran y el botón para pagar tu parte, y **Creados por mí**, con los cobros que creaste y cuánto llevas recogido. |
+| Perfil      | `/profile`      | Tus datos, tu placa para compartirla y el botón para cerrar sesión.                                                                                          |
 
-```
+### Pantallas de un paso a paso
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+No tienen la barra de abajo. Usan una flecha para volver y el botón principal siempre está en la parte inferior de la pantalla.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
+| Vista               | Ruta           | Para qué sirve                                                                                                                                        |
+| ------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Recargar saldo      | `/reload`      | Agregar dinero a tu billetera, con montos sugeridos.                                                                                                  |
+| Transferir          | `/transfer`    | Buscar a la persona por su placa, confirmar su nombre, elegir el monto y confirmar el envío.                                                          |
+| Dividir una cancha  | `/charges/new` | Crear un cobro: nombre, total pagado, si **tú también jugaste** y las personas, agregadas por placa. Muestra cuánto pagará cada uno antes de crearlo. |
+| Detalle de un cobro | `/charges/:id` | Estado del cobro, progreso de lo recogido y quién ya pagó. Si eres miembro y te falta pagar, desde aquí pagas tu parte.                               |

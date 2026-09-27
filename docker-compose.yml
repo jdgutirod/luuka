@@ -1,14 +1,14 @@
 # Starts the whole app: PostgreSQL, the API and the web frontend.
 # Usage: cp .env.example .env (and fill it in), then: docker compose up --build
-name: lukas
+name: luuka
 
 services:
   db:
     image: postgres:17-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-lukas}
+      POSTGRES_USER: ${POSTGRES_USER:-luuka}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en el archivo .env}
-      POSTGRES_DB: ${POSTGRES_DB:-lukas}
+      POSTGRES_DB: ${POSTGRES_DB:-luuka}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -22,7 +22,7 @@ services:
     build: ./backend
     environment:
       # "db" is the name of the database service inside the Docker network
-      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-lukas}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-lukas}
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-luuka}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-luuka}
       SECRET_KEY: ${SECRET_KEY:?Define SECRET_KEY en el archivo .env}
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       MIN_TRANSACTION_AMOUNT: ${MIN_TRANSACTION_AMOUNT:-1000}

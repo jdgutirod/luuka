@@ -6,7 +6,7 @@ from app.core.config import CORS_ORIGINS, PORT
 from app.core.exception_handlers import register_exception_handlers
 from app.routers import accounts, group_charges, member_charges, transactions
 
-app = FastAPI(title="FastAPI App")
+app = FastAPI(title="Luuka API")
 
 # The token travels in the Authorization header, not in cookies, so credentials are not needed
 app.add_middleware(
