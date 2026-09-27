@@ -8,8 +8,6 @@
   <a href="frontend/README.md"><img src="https://img.shields.io/badge/README-Frontend-047857?style=flat-square&logo=react&logoColor=white" alt="README del frontend" /></a>
 </p>
 
-# Luuka
-
 Luuka es una billetera digital para mover dinero entre personas de forma rápida y sin fricción, sin tener que pasar por un banco. Cada usuario tiene una cuenta que se identifica con una **placa**, por ejemplo `ABC-123`, y con esa placa cualquiera le puede transferir dinero fácilmente.
 
 El repositorio tiene dos partes:
